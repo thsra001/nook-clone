@@ -1,9 +1,9 @@
-## nook desktop but linux and bevy, yuh
+# nook desktop but linux and bevy, yuh
 nook desktop is nice, but tray icons don't work.
 solution make a #bevy clone with proppa linux support and stuff :P
 
 
-# credits
+### credits
 i used the inter font and nerd font symbols
 credits to the OG at https://github.com/mn6/nook-desktop
 and rip the OG 2022-2025
