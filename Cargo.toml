@@ -4,9 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = {version="0.15.2", features=["wayland"]} 
+bevy = {version="0.15.2", features=["wayland","mp3"]} 
 bevy-inspector-egui = "0.29.1"
+image = "0.25.5"
 tray-icon = "0.19.2"
+
+#[target."cfg(target_os = \"linux\")".dev-dependencies]
+gtk = "0.18"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
