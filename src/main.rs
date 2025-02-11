@@ -34,6 +34,7 @@ fn main() {
 // bar #090410
 // bg #17092c
 
+
 fn tray_icon(asset_server: Res<AssetServer>) {
     let img: Handle<Image> = asset_server.load("nook.png");
     std::thread::spawn(|| {
