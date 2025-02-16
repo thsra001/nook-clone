@@ -1,14 +1,18 @@
-use bevy::{prelude::*, winit::WinitSettings};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::{prelude::*, ui::RelativeCursorPosition, winit::WinitSettings};
+use bevy_inspector_egui::{egui::Slider, quick::WorldInspectorPlugin};
 use tray_icon::{
     menu::{self, AboutMetadata, Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     TrayIcon, TrayIconBuilder, TrayIconEvent, TrayIconEventReceiver,
 };
+mod colours;
+use colours::*;
 mod interactive;
+use gtk::prelude::*;
 use interactive::topbar::PlayerButton;
 use interactive::*;
-use gtk::prelude::*;
+use winit::event_loop::EventLoop;
 
+use crate::interactive::slider::*;
 use crate::topbar::{CloseButton, MiniButton};
 
 #[derive(Component)]
@@ -16,8 +20,8 @@ struct ValSub(f32);
 
 enum UserEvent {
     TrayIconEvent(tray_icon::TrayIconEvent),
-    MenuEvent(tray_icon::menu::MenuEvent)
-  }
+    MenuEvent(tray_icon::menu::MenuEvent),
+}
 
 fn main() {
     App::new()
@@ -34,23 +38,21 @@ fn main() {
 // bar #090410
 // bg #17092c
 
-
 fn tray_icon(asset_server: Res<AssetServer>) {
-    let img: Handle<Image> = asset_server.load("nook.png");
+    let _img: Handle<Image> = asset_server.load("nook.png");
     std::thread::spawn(|| {
         gtk::init().unwrap();
         let path = "assets/images/nookTray.png";
         info!(path);
         let icon = load_icon(std::path::Path::new(path));
-        
-        let item1 = MenuItem::with_id("open","open", true, None);
-        let item2 = MenuItem::with_id("play-pause","play/pause", true, None);
-        let item3 = MenuItem::with_id("quit","quit", true, None);
 
-        let tray_menu = Menu::with_items(&[&item1,&item2,&item3]).unwrap();
+        let item1 = MenuItem::with_id("open", "open", true, None);
+        let item2 = MenuItem::with_id("play-pause", "play/pause", true, None);
+        let item3 = MenuItem::with_id("quit", "quit", true, None);
 
-        
-        let tray_icon = TrayIconBuilder::new()
+        let tray_menu = Menu::with_items(&[&item1, &item2, &item3]).unwrap();
+
+        let _tray_icon = TrayIconBuilder::new()
             .with_menu_on_left_click(false)
             .with_menu(Box::new(tray_menu))
             .with_tooltip("nook-linux")
@@ -59,6 +61,18 @@ fn tray_icon(asset_server: Res<AssetServer>) {
             .unwrap();
 
         gtk::main();
+
+        let event_loop = EventLoop::<UserEvent>::with_user_event().build().unwrap();
+
+        let proxy = event_loop.create_proxy();
+        tray_icon::TrayIconEvent::set_event_handler(Some(move |event| {
+            proxy.send_event(UserEvent::TrayIconEvent(event));
+        }));
+
+        let proxy = event_loop.create_proxy();
+        tray_icon::menu::MenuEvent::set_event_handler(Some(move |event| {
+            proxy.send_event(UserEvent::MenuEvent(event));
+        }));
     });
 }
 
@@ -104,7 +118,7 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ..default()
                 },
                 BorderColor(Color::srgb(0.1, 0.8, 0.3)),
-                BackgroundColor(Color::Srgba(Srgba::hex("#07020e").unwrap())),
+                BackgroundColor(colours::TOPBAR_NOIR),
                 Name::new("topbar"),
             ))
             .with_children(|topbar| {
@@ -232,14 +246,31 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                                     ..default()
                                 },
                             ));
-                            mbollock2.spawn((
-                                Node {
-                                    height: Val::Px(12.0),
-                                    width: Val::Px(128.0),
-                                    ..default()
-                                },
-                                BackgroundColor(Color::Srgba(Srgba::hex("#0075ff").unwrap())),
-                            ));
+                            mbollock2
+                                .spawn((
+                                    Node {
+                                        height: Val::Px(16.0),
+                                        width: Val::Px(128.0),
+                                        ..default()
+                                    },
+                                    BackgroundColor(colours::SLIDER_BLUE),
+                                    Slider,
+                                    SliderRes::MusVol,
+                                ))
+                                .with_child((
+                                    Node {
+                                        height: Val::Px(16.0),
+                                        width: Val::Px(16.0),
+                                        ..default()
+                                    },
+                                    BackgroundColor(colours::SLIDER_HEAD_TEAL),
+                                    SliderHead,
+                                    SliderRes::MusVol,
+                                    PickingBehavior {
+                                        should_block_lower: false,
+                                        is_hoverable: false,
+                                    },
+                                ));
                         });
                     // rain volume
                     mbollock
@@ -257,14 +288,33 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                                     ..default()
                                 },
                             ));
-                            rbollock2.spawn((
-                                Node {
-                                    height: Val::Px(12.0),
-                                    width: Val::Px(128.0),
-                                    ..default()
-                                },
-                                BackgroundColor(Color::Srgba(Srgba::hex("#0075ff").unwrap())),
-                            ));
+                            // slider min left:0, max left 116
+                            // transalate to volume: 0-2
+                            rbollock2
+                                .spawn((
+                                    Node {
+                                        height: Val::Px(16.0),
+                                        width: Val::Px(128.0),
+                                        ..default()
+                                    },
+                                    BackgroundColor(colours::SLIDER_BLUE),
+                                    Slider,
+                                    SliderRes::RainVol,
+                                ))
+                                .with_child((
+                                    Node {
+                                        height: Val::Px(16.0),
+                                        width: Val::Px(16.0),
+                                        ..default()
+                                    },
+                                    BackgroundColor(colours::SLIDER_HEAD_TEAL),
+                                    SliderHead,
+                                    SliderRes::RainVol,
+                                    PickingBehavior {
+                                        should_block_lower: false,
+                                        is_hoverable: false,
+                                    },
+                                ));
                         });
                 });
                 //game selector
@@ -272,11 +322,32 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     Node {
                         width: Val::Px(312.0),
                         height: Val::Px(42.0),
+                        align_items: AlignItems::Center,
+                        padding:  UiRect::horizontal(Val::Px(16.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::Srgba(Srgba::hex("#211335").unwrap())),
+                    BackgroundColor(colours::SELECTOR_PURBLE),
                     Name::new("gameSelectorBollock"),
-                ));
+                ))
+                .with_children(|selector| {
+                    // current choice
+                    selector.spawn((
+                        Text::new("AC: New Leaf (3DS) [Snowy]"),
+                        TextFont {
+                            font: asset_server.load("fonts/inter-lig.ttf"),
+                            font_size: 16.0,
+                            ..default()
+                        },
+                    ));
+                    // drop down
+                    selector.spawn(
+                        (Node {
+                            width: Val::Px(42.0),
+                            height: Val::Px(42.0),
+                            ..default()
+                        }),
+                    );
+                });
                 //patreon & changelog
                 body.spawn((
                     Node {

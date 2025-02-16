@@ -14,7 +14,7 @@ impl Default for MusicPlaying {
 }
 
 #[derive(Resource, Reflect)]
-pub struct MusicVolume(f32);
+pub struct MusicVolume(pub f32);
 impl Default for MusicVolume {
     fn default() -> Self {
         Self(0.5)
