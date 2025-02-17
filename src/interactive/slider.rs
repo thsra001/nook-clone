@@ -2,7 +2,10 @@ use bevy::{picking::focus::PickingInteraction, prelude::*, ui::RelativeCursorPos
 
 use crate::interactive;
 
-use super::{player::{MusicVolume, RainVolume}, UiReflectSet, UiSet};
+use super::{
+    player::{MusicVolume, RainVolume},
+    UiReflectSet, UiSet,
+};
 
 #[derive(Component)]
 #[require(RelativeCursorPosition, Button, SliderRes, Changing)]
@@ -23,7 +26,13 @@ pub(crate) struct SliderImport;
 
 impl Plugin for SliderImport {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (slider_update.in_set(UiSet),slider_head_update.in_set(UiReflectSet)));
+        app.add_systems(
+            Update,
+            (
+                slider_update.in_set(UiSet),
+                slider_head_update.in_set(UiReflectSet),
+            ),
+        );
     }
 }
 fn slider_update(
@@ -64,16 +73,22 @@ fn slider_update(
     }
 }
 fn slider_head_update(
+    res_mus_vol: ResMut<MusicVolume>,
     res_rain_vol: Res<RainVolume>,
-    mut res_mus_vol: ResMut<MusicVolume>,
     mut q_slider_head: Query<(&SliderRes, &mut Node), With<SliderHead>>,
 ) {
-    for (slider_res,mut node) in &mut q_slider_head{
-        match slider_res {
-            SliderRes::MusVol => {node.left = Val::Px(res_mus_vol.0*112.0)},
-            SliderRes::RainVol => {node.left = Val::Px(res_rain_vol.0*112.0)},
-            SliderRes::Missing => {panic!("remember to add sliderRes with a valid variant")}
-            _ => {panic!("SliderRes type not implemented")}
+    if res_mus_vol.is_changed() || res_rain_vol.is_changed() {
+        for (slider_res, mut node) in &mut q_slider_head {
+            match slider_res {
+                SliderRes::MusVol => node.left = Val::Px(res_mus_vol.0 * 112.0),
+                SliderRes::RainVol => node.left = Val::Px(res_rain_vol.0 * 112.0),
+                SliderRes::Missing => {
+                    panic!("remember to add sliderRes with a valid variant")
+                }
+                _ => {
+                    panic!("SliderRes type not implemented")
+                }
+            }
         }
     }
 }

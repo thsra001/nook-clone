@@ -22,7 +22,7 @@ fn topbar_buttons(
     mut res_playing: ResMut<MusicPlaying>,
     // minimise button
     q_mini: Query<&PickingInteraction,With<MiniButton>>,
-    mut window: Single<&mut Window>,
+    mut window: Query<&mut Window>,
     // close button
     q_close: Query<&PickingInteraction,With<CloseButton>>,
     mut exit: EventWriter<AppExit>
@@ -35,8 +35,8 @@ fn topbar_buttons(
     }
     if let Ok(mini) = q_mini.get_single(){
         if *mini == PickingInteraction::Pressed{
-          window.set_minimized(true);
-          window.visible=false;
+        //   window.set_minimized(true);
+        //   window.visible=false;
           info!("minimised")
           //todo!("TODO: remember to add tray icon");
         }

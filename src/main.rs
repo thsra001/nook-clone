@@ -12,8 +12,11 @@ use interactive::topbar::PlayerButton;
 use interactive::*;
 use winit::event_loop::EventLoop;
 
-use crate::interactive::slider::*;
 use crate::topbar::{CloseButton, MiniButton};
+use crate::{
+    game_selector::{GameSelector, GameSelectorText, GamesSelectorButton},
+    interactive::slider::*,
+};
 
 #[derive(Component)]
 struct ValSub(f32);
@@ -98,10 +101,8 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 height: Val::Percent(100.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(2.0)),
                 ..default()
             },
-            BorderColor(Color::srgb(0.2, 0.3, 0.4)),
             BackgroundColor(Color::Srgba(Srgba::hex("#17092c").unwrap())),
             Name::new("window"),
         ))
@@ -110,14 +111,12 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 Node {
                     width: Val::Percent(100.0),
                     height: Val::Px(50.0),
-                    border: UiRect::all(Val::Px(2.0)),
                     align_items: AlignItems::Center,
                     column_gap: Val::Px(10.0),
                     justify_content: JustifyContent::SpaceBetween,
                     padding: UiRect::horizontal(Val::Px(15.0)),
                     ..default()
                 },
-                BorderColor(Color::srgb(0.1, 0.8, 0.3)),
                 BackgroundColor(colours::TOPBAR_NOIR),
                 Name::new("topbar"),
             ))
@@ -210,14 +209,12 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
-                    border: UiRect::all(Val::Px(2.0)),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     row_gap: Val::Px(20.0),
                     padding: UiRect::top(Val::Px(18.0)),
                     ..default()
                 },
-                BorderColor(Color::WHITE),
                 Name::new("body"),
             ))
             .with_children(|body| {
@@ -323,30 +320,58 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         width: Val::Px(312.0),
                         height: Val::Px(42.0),
                         align_items: AlignItems::Center,
-                        padding:  UiRect::horizontal(Val::Px(16.0)),
+                        padding: UiRect::left(Val::Px(12.0)),
+                        justify_content: JustifyContent::SpaceBetween,
                         ..default()
                     },
                     BackgroundColor(colours::SELECTOR_PURBLE),
                     Name::new("gameSelectorBollock"),
+                    GamesSelectorButton,
+                    Button,
                 ))
                 .with_children(|selector| {
                     // current choice
                     selector.spawn((
-                        Text::new("AC: New Leaf (3DS) [Snowy]"),
+                        Text::new(GameSelector::population_growing.to_display_name()),
                         TextFont {
                             font: asset_server.load("fonts/inter-lig.ttf"),
-                            font_size: 16.0,
+                            font_size: 14.0,
                             ..default()
+                        },
+                        GameSelectorText,
+                        PickingBehavior {
+                            should_block_lower: false,
+                            is_hoverable: false,
                         },
                     ));
                     // drop down
-                    selector.spawn(
-                        (Node {
-                            width: Val::Px(42.0),
-                            height: Val::Px(42.0),
-                            ..default()
-                        }),
-                    );
+                    selector
+                        .spawn((
+                            Node {
+                                width: Val::Px(42.0),
+                                height: Val::Px(42.0),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            },
+                            BackgroundColor(SELECTOR_PURBLE2),
+                            PickingBehavior {
+                                should_block_lower: false,
+                                is_hoverable: false,
+                            },
+                        ))
+                        .with_child((
+                            Text::new(""),
+                            TextFont {
+                                font: asset_server.load("fonts/nerd-symbols-reg.ttf"),
+                                font_size: 24.0,
+                                ..default()
+                            },
+                            PickingBehavior {
+                                should_block_lower: false,
+                                is_hoverable: false,
+                            },
+                        ));
                 });
                 //patreon & changelog
                 body.spawn((

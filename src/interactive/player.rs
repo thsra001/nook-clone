@@ -40,13 +40,6 @@ impl Plugin for PlayerImport {
             .init_resource::<MusicPlaying>()
             .init_resource::<MusicVolume>()
             .init_resource::<RainVolume>()
-            // register resources
-            .register_type::<MusicPlaying>()
-            .register_type::<MusicVolume>()
-            .register_type::<RainVolume>()
-            //make egui
-            .add_plugins(ResourceInspectorPlugin::<MusicVolume>::default())
-            .add_plugins(ResourceInspectorPlugin::<RainVolume>::default())
             // add systems
             .add_systems(Startup, setup)
             .add_systems(Update, update.in_set(UiReflectSet));
