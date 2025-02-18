@@ -49,7 +49,7 @@ impl Plugin for PlayerImport {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(((
         IsMusic,
-        AudioPlayer::new(asset_server.load("music/12am.ogg")),
+        AudioPlayer::new(asset_server.load("music/new-horizons/12am.ogg")),
         PlaybackSettings {
             mode: PlaybackMode::Loop,
             volume:Volume::new(0.5),
@@ -59,7 +59,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ),));
     commands.spawn(((
         IsRain,
-        AudioPlayer::new(asset_server.load("music/game-rain.ogg")),
+        AudioPlayer::new(asset_server.load("music/rain/game-rain.ogg")),
         PlaybackSettings {
             mode: PlaybackMode::Loop,
             volume: Volume::new(0.5),

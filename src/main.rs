@@ -29,6 +29,7 @@ enum UserEvent {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default())
         .add_plugins(InterImport)
         .add_plugins(WorldInspectorPlugin::new())
         .insert_resource(WinitSettings::desktop_app())

@@ -13,6 +13,8 @@ tray-icon = "0.19.2"
 gtk = "0.18"
 winit = "0.30.9"
 chrono = "0.4.39"
+bevy-tokio-tasks = "0.15.0"
+reqwest = "0.12.12"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
