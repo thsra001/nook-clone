@@ -60,10 +60,10 @@ fn slider_update(
             if let Some(relative_cursor_position) = cursor_rel_pos.normalized {
                 match slider_res {
                     SliderRes::MusVol => {
-                        *&mut res_mus_vol.0 = relative_cursor_position.x.clamp(0.0, 1.0);
+                        *&mut res_mus_vol.0 = relative_cursor_position.x.clamp(0.0, 1.0)*2.0;
                     }
                     SliderRes::RainVol => {
-                        *&mut res_rain_vol.0 = relative_cursor_position.x.clamp(0.0, 1.0);
+                        *&mut res_rain_vol.0 = relative_cursor_position.x.clamp(0.0, 1.0)*2.0;
                     }
                     SliderRes::Missing => panic!("remember to add sliderRes comp with other type"),
                     _ => panic!("sliderRes type not implemented"),
@@ -80,8 +80,8 @@ fn slider_head_update(
     if res_mus_vol.is_changed() || res_rain_vol.is_changed() {
         for (slider_res, mut node) in &mut q_slider_head {
             match slider_res {
-                SliderRes::MusVol => node.left = Val::Px(res_mus_vol.0 * 112.0),
-                SliderRes::RainVol => node.left = Val::Px(res_rain_vol.0 * 112.0),
+                SliderRes::MusVol => node.left = Val::Px(res_mus_vol.0 * 56.0),
+                SliderRes::RainVol => node.left = Val::Px(res_rain_vol.0 * 56.0),
                 SliderRes::Missing => {
                     panic!("remember to add sliderRes with a valid variant")
                 }

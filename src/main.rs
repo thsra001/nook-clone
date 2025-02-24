@@ -1,15 +1,22 @@
-use bevy::{prelude::*, ui::RelativeCursorPosition, winit::WinitSettings};
+use std::time::Duration;
+
+use bevy::{prelude::*, ui::RelativeCursorPosition, window::WindowResolution, winit::{UpdateMode, WinitSettings}};
 use bevy_inspector_egui::{egui::Slider, quick::WorldInspectorPlugin};
+use bevy_tokio_tasks::TokioTasksRuntime;
 use tray_icon::{
     menu::{self, AboutMetadata, Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     TrayIcon, TrayIconBuilder, TrayIconEvent, TrayIconEventReceiver,
 };
 mod colours;
 use colours::*;
+mod widgets;
+use widgets::*;
 mod interactive;
 use gtk::prelude::*;
 use interactive::topbar::PlayerButton;
 use interactive::*;
+mod sites;
+use sites::*;
 use winit::event_loop::EventLoop;
 
 use crate::topbar::{CloseButton, MiniButton};
@@ -19,7 +26,7 @@ use crate::{
 };
 
 #[derive(Component)]
-struct ValSub(f32);
+struct SiteHolder;
 
 enum UserEvent {
     TrayIconEvent(tray_icon::TrayIconEvent),
@@ -28,11 +35,21 @@ enum UserEvent {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin{
+            primary_window:Some(Window{
+                resolution:WindowResolution::new(400.0, 216.0),
+                ..default()
+            }),
+            ..default()
+        }))
+      //  .add_systems(PreStartup, load_persistant)
         .add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default())
-        .add_plugins(InterImport)
+        .add_plugins((SitesImport,WidgetImport,InterImport))
         .add_plugins(WorldInspectorPlugin::new())
-        .insert_resource(WinitSettings::desktop_app())
+        .insert_resource( WinitSettings {
+            focused_mode: UpdateMode::reactive(Duration::from_secs(5)),
+            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs(15)),
+        })
         .insert_resource(ClearColor(Color::Srgba(Srgba::hex("#16072b").unwrap())))
         .add_systems(Startup, build_ui)
         .add_systems(Startup, tray_icon)
@@ -42,8 +59,7 @@ fn main() {
 // bar #090410
 // bg #17092c
 
-fn tray_icon(asset_server: Res<AssetServer>) {
-    let _img: Handle<Image> = asset_server.load("nook.png");
+fn tray_icon(runtime: ResMut<TokioTasksRuntime>) {
     std::thread::spawn(|| {
         gtk::init().unwrap();
         let path = "assets/images/nookTray.png";
@@ -104,8 +120,9 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::Srgba(Srgba::hex("#17092c").unwrap())),
+            BackgroundColor(colours::BACKGROUND_PURBLE),
             Name::new("window"),
+            SiteHolder,
         ))
         .with_children(|nod| {
             nod.spawn((
@@ -206,200 +223,17 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         ));
                     });
             });
-            nod.spawn((
-                Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    row_gap: Val::Px(20.0),
-                    padding: UiRect::top(Val::Px(18.0)),
-                    ..default()
-                },
-                Name::new("body"),
-            ))
-            .with_children(|body| {
-                //music,rain sliders
-                body.spawn((
-                    Node {
-                        column_gap: Val::Px(55.0),
-                        ..default()
-                    },
-                    Name::new("musicBollock"),
-                ))
-                .with_children(|mbollock| {
-                    // music slider
-                    mbollock
-                        .spawn((Node {
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },))
-                        .with_children(|mbollock2| {
-                            mbollock2.spawn((
-                                Text::new("Music Volume"),
-                                TextFont {
-                                    font: asset_server.load("fonts/inter-lig.ttf"),
-                                    font_size: 18.0,
-                                    ..default()
-                                },
-                            ));
-                            mbollock2
-                                .spawn((
-                                    Node {
-                                        height: Val::Px(16.0),
-                                        width: Val::Px(128.0),
-                                        ..default()
-                                    },
-                                    BackgroundColor(colours::SLIDER_BLUE),
-                                    Slider,
-                                    SliderRes::MusVol,
-                                ))
-                                .with_child((
-                                    Node {
-                                        height: Val::Px(16.0),
-                                        width: Val::Px(16.0),
-                                        ..default()
-                                    },
-                                    BackgroundColor(colours::SLIDER_HEAD_TEAL),
-                                    SliderHead,
-                                    SliderRes::MusVol,
-                                    PickingBehavior {
-                                        should_block_lower: false,
-                                        is_hoverable: false,
-                                    },
-                                ));
-                        });
-                    // rain volume
-                    mbollock
-                        .spawn((Node {
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },))
-                        .with_children(|rbollock2| {
-                            rbollock2.spawn((
-                                Text::new("Rain Volume"),
-                                TextFont {
-                                    font: asset_server.load("fonts/inter-lig.ttf"),
-                                    font_size: 18.0,
-                                    ..default()
-                                },
-                            ));
-                            // slider min left:0, max left 116
-                            // transalate to volume: 0-2
-                            rbollock2
-                                .spawn((
-                                    Node {
-                                        height: Val::Px(16.0),
-                                        width: Val::Px(128.0),
-                                        ..default()
-                                    },
-                                    BackgroundColor(colours::SLIDER_BLUE),
-                                    Slider,
-                                    SliderRes::RainVol,
-                                ))
-                                .with_child((
-                                    Node {
-                                        height: Val::Px(16.0),
-                                        width: Val::Px(16.0),
-                                        ..default()
-                                    },
-                                    BackgroundColor(colours::SLIDER_HEAD_TEAL),
-                                    SliderHead,
-                                    SliderRes::RainVol,
-                                    PickingBehavior {
-                                        should_block_lower: false,
-                                        is_hoverable: false,
-                                    },
-                                ));
-                        });
-                });
-                //game selector
-                body.spawn((
-                    Node {
-                        width: Val::Px(312.0),
-                        height: Val::Px(42.0),
-                        align_items: AlignItems::Center,
-                        padding: UiRect::left(Val::Px(12.0)),
-                        justify_content: JustifyContent::SpaceBetween,
-                        ..default()
-                    },
-                    BackgroundColor(colours::SELECTOR_PURBLE),
-                    Name::new("gameSelectorBollock"),
-                    GamesSelectorButton,
-                    Button,
-                ))
-                .with_children(|selector| {
-                    // current choice
-                    selector.spawn((
-                        Text::new(GameSelector::population_growing.to_display_name()),
-                        TextFont {
-                            font: asset_server.load("fonts/inter-lig.ttf"),
-                            font_size: 14.0,
-                            ..default()
-                        },
-                        GameSelectorText,
-                        PickingBehavior {
-                            should_block_lower: false,
-                            is_hoverable: false,
-                        },
-                    ));
-                    // drop down
-                    selector
-                        .spawn((
-                            Node {
-                                width: Val::Px(42.0),
-                                height: Val::Px(42.0),
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                            BackgroundColor(SELECTOR_PURBLE2),
-                            PickingBehavior {
-                                should_block_lower: false,
-                                is_hoverable: false,
-                            },
-                        ))
-                        .with_child((
-                            Text::new(""),
-                            TextFont {
-                                font: asset_server.load("fonts/nerd-symbols-reg.ttf"),
-                                font_size: 24.0,
-                                ..default()
-                            },
-                            PickingBehavior {
-                                should_block_lower: false,
-                                is_hoverable: false,
-                            },
-                        ));
-                });
-                //patreon & changelog
-                body.spawn((
-                    Node {
-                        column_gap: Val::Px(20.0),
-                        ..default()
-                    },
-                    Name::new("linkBollock"),
-                ))
-                .with_children(|lbollock| {
-                    lbollock.spawn((
-                        Text::new("patreon"),
-                        TextFont {
-                            font: asset_server.load("fonts/inter-reg.ttf"),
-                            font_size: 10.0,
-                            ..default()
-                        },
-                    ));
-                    lbollock.spawn((
-                        Text::new("changelog"),
-                        TextFont {
-                            font: asset_server.load("fonts/inter-reg.ttf"),
-                            font_size: 10.0,
-                            ..default()
-                        },
-                    ));
-                });
-            });
         });
 }
+// fn load_persistant(mut commands: Commands) {
+//     let config_dir = dirs::config_dir().unwrap().join("nook-linux");
+//     commands.insert_resource(
+//         Persistent::<GameSelector>::builder()
+//             .name("games selector")
+//             .format(StorageFormat::Toml)
+//             .path(config_dir.join("save.toml"))
+//             .default(GameSelector::new_horizons)
+//             .build()
+//             .expect("failed to init gameselector")
+//     )
+// }

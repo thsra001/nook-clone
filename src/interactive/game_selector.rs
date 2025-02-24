@@ -1,10 +1,10 @@
 use std::{slice::Iter, thread::spawn};
 
 use bevy::{
-    input::common_conditions::input_just_pressed, picking::focus::PickingInteraction, prelude::*,
-    render::camera::RenderTarget, state::commands, window::WindowRef,
+    picking::focus::PickingInteraction, prelude::*, render::camera::RenderTarget, window::{WindowLevel, WindowRef, WindowResolution}
 };
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use rand::prelude::*;
 
 use crate::colours;
 
@@ -110,6 +110,33 @@ impl GameSelector {
         ];
         DIRECTIONS.iter()
     }
+    pub fn games() -> &'static [GameSelector; 14]{
+        &[
+            GameSelector::population_growing,
+            GameSelector::population_growing_snowy,
+            GameSelector::population_growing_cherry,
+            GameSelector::population_growing_rainy,
+            GameSelector::wild_world,
+            GameSelector::wild_world_rainy,
+            GameSelector::wild_world_snowy,
+            GameSelector::new_leaf,
+            GameSelector::new_leaf_rainy,
+            GameSelector::new_leaf_snowy,
+            GameSelector::new_horizons,
+            GameSelector::new_horizons_rainy,
+            GameSelector::new_horizons_snowy,
+            GameSelector::pocket_camp,
+        ]
+    }
+    // todo: fix this bs band aid fix
+    pub fn random_game() ->GameSelector {
+        let mut rng = rand::rng();
+        let choice = GameSelector::games().choose(&mut rng).unwrap().clone();
+        match choice {
+            GameSelector::population_growing_rainy => GameSelector::random_game(),
+            _ => choice
+        }
+    }
 }
 pub struct GameSelectorImport;
 impl Plugin for GameSelectorImport {
@@ -132,7 +159,12 @@ fn update(
         if *selectbut == PickingInteraction::Pressed && mous.just_pressed(MouseButton::Left) {
             info!("select button pressed");
             let win2 = commands
-                .spawn((GameSelectorWindowClose, Window::default()))
+                .spawn((GameSelectorWindowClose, Window{
+                    resolution:WindowResolution::new(200.0, 200.0),
+                    window_level:WindowLevel::AlwaysOnTop,
+                    position:WindowPosition::At(IVec2::splat(25)),
+                    ..default()
+                }))
                 .id();
             let win2_cam = commands
                 .spawn((
@@ -168,14 +200,20 @@ fn update(
                             Button,
                             GameSelectorOption(game.clone()),
                             {
-                                if game == &GameSelector::pocket_camp {
-                                    Node {
-                                        margin: UiRect::bottom(Val::Px(18.0)),
-                                        ..default()
-                                    }
-                                } else {
-                                    Node { ..default() }
+                                match &game {
+                                    &GameSelector::new_horizons_snowy => {},
+                                    &GameSelector::pocket_camp | &GameSelector::kk_slider => {},
+                                    _ => {}
                                 }
+                                // if game == &GameSelector::new_horizons_snowy {
+                                //     Node {
+                                //         margin: UiRect::bottom(Val::Px(18.0)),
+                                //         ..default()
+                                //     }
+                                // } else {
+                                //     Node { ..default() },BackgroundColor
+                                // }
+                                // ma
                             },
                         ));
                     }
