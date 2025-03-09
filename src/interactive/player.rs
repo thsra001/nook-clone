@@ -1,7 +1,7 @@
 use bevy::{audio::{PlaybackMode, Volume}, prelude::*};
 use bevy_inspector_egui::{prelude::*, quick::ResourceInspectorPlugin};
 
-use super::{topbar::PlayerButton, UiReflectSet};
+use super::{topbar::PlayerButton, ButtonReflectSet};
 
 pub struct PlayerImport;
 
@@ -14,10 +14,10 @@ impl Default for MusicPlaying {
 }
 
 #[derive(Resource, Reflect)]
-pub struct MusicVolume(pub f32);
+pub(crate)  struct MusicVolume(pub f32);
 impl Default for MusicVolume {
     fn default() -> Self {
-        Self(0.5)
+        Self(1.0)
     }
 }
 #[derive(Component)]
@@ -27,7 +27,7 @@ pub struct IsMusic;
 pub struct RainVolume(pub f32);
 impl Default for RainVolume {
     fn default() -> Self {
-        Self(0.5)
+        Self(1.0)
     }
 }
 #[derive(Component)]
@@ -42,7 +42,7 @@ impl Plugin for PlayerImport {
             .init_resource::<RainVolume>()
             // add systems
             .add_systems(Startup, setup)
-            .add_systems(Update, update.in_set(UiReflectSet));
+            .add_systems(Update, update.in_set(ButtonReflectSet));
     }
 }
 

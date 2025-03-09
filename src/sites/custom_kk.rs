@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::SiteHolder;
+use crate::{widgets::drop_down::{DropDown, DropDownRes}, SiteHolder};
 
 use super::{CurrentSite, SiteRoot};
 
@@ -18,7 +18,11 @@ fn load_customKK(mut commands:Commands,q_holder:Single<Entity,With<SiteHolder>>,
   for ent in &q_other_site{
     commands.entity(ent).despawn_recursive();
   }
-  let site = commands.spawn((SiteRoot)).id();
+  let site = commands.spawn((SiteRoot)).with_children(
+    |site|{
+      site.spawn((DropDown,DropDownRes::Lang));
+    }
+  ).id();
   commands.entity(*q_holder).add_child(site);
 
 }

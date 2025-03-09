@@ -1,7 +1,7 @@
-use bevy::{prelude::*, transform::commands};
+use bevy::prelude::*;
 
-use crate::{colours::{self, SELECTOR_PURBLE2}, game_selector::{GameSelector, GameSelectorText, GamesSelectorButton}, slider::{Slider, SliderHead, SliderRes}, SiteHolder};
-
+use crate::{colours::{self, SELECTOR_PURBLE2}, game_selector::{GameSelector, GameSelectorText, GamesSelectorButton}, i18evy::I18Key, player::MusicVolume, slider::{Slider, SliderHead, SliderRes}, SiteHolder};
+use crate::interactive::player::RainVolume;
 use super::{CurrentSite, SiteRoot};
 
 pub struct StartImport;
@@ -20,6 +20,8 @@ fn load_start(
     q_holder: Single<Entity, With<SiteHolder>>,
     q_site: Res<CurrentSite>,
     q_other_site: Query<Entity, With<SiteRoot>>,
+    res_mus_vol: ResMut<MusicVolume>,
+    res_rain_vol: Res<RainVolume>,
 ) {
     for ent in &q_other_site {
         commands.entity(ent).despawn_recursive();
@@ -56,6 +58,7 @@ fn load_start(
                     .with_children(|mbollock2| {
                         mbollock2.spawn((
                             Text::new("Music Volume"),
+                            I18Key::MusicVolume,
                             TextFont {
                                 font: asset_server.load("fonts/inter-lig.ttf"),
                                 font_size: 18.0,
@@ -77,6 +80,7 @@ fn load_start(
                                 Node {
                                     height: Val::Px(16.0),
                                     width: Val::Px(16.0),
+                                    left: Val::Px(res_mus_vol.0 * 56.0),
                                     ..default()
                                 },
                                 BackgroundColor(colours::SLIDER_HEAD_TEAL),
@@ -98,6 +102,7 @@ fn load_start(
                     .with_children(|rbollock2| {
                         rbollock2.spawn((
                             Text::new("Rain Volume"),
+                            I18Key::RainVolume,
                             TextFont {
                                 font: asset_server.load("fonts/inter-lig.ttf"),
                                 font_size: 18.0,
@@ -121,6 +126,7 @@ fn load_start(
                                 Node {
                                     height: Val::Px(16.0),
                                     width: Val::Px(16.0),
+                                    left: Val::Px(res_rain_vol.0 * 56.0),
                                     ..default()
                                 },
                                 BackgroundColor(colours::SLIDER_HEAD_TEAL),
@@ -152,6 +158,7 @@ fn load_start(
                 // current choice
                 selector.spawn((
                     Text::new(GameSelector::population_growing.to_display_name()),
+                    I18Key::AcPopulationGrowingGc,
                     TextFont {
                         font: asset_server.load("fonts/inter-lig.ttf"),
                         font_size: 14.0,
@@ -203,6 +210,7 @@ fn load_start(
             .with_children(|lbollock| {
                 lbollock.spawn((
                     Text::new("patreon"),
+                    I18Key::Patreon,
                     TextFont {
                         font: asset_server.load("fonts/inter-reg.ttf"),
                         font_size: 10.0,
@@ -211,6 +219,7 @@ fn load_start(
                 ));
                 lbollock.spawn((
                     Text::new("changelog"),
+                    I18Key::Changelog,
                     TextFont {
                         font: asset_server.load("fonts/inter-reg.ttf"),
                         font_size: 10.0,

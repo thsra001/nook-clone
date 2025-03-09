@@ -10,6 +10,7 @@ pub const  TOPBAR_NOIR: bevy::prelude::Color = Color::srgb(0.027,0.008,0.055);
 
 pub const SLIDER_BLUE: bevy::prelude::Color= Color::srgb(0.0, 0.459, 1.0);
 pub const SLIDER_HEAD_TEAL: bevy::prelude::Color = Color::srgb(0.024,0.165,0.361);
+pub const WIDE_N_LAME: bevy::prelude::Color = Color::srgb(89.0 / 255.0, 80.0 / 255.0, 105.0 / 255.0);
 
 pub const  TEXT_WHITE: bevy::prelude::Color = Color::WHITE;
 pub const REMOVAL_RED: bevy::prelude::Color = Color::srgb(1.0, 75.0/255.0, 75.0/255.0);

@@ -40,7 +40,6 @@ impl Plugin for RainImport {
         app.init_resource::<RainType>()
             .register_type::<RainType>()
             .add_event::<LoadRain>()
-            .add_plugins(ResourceInspectorPlugin::<RainType>::new())
             .add_systems(Update, (rain_reflect, load_rain.after(rain_reflect)));
     }
 }

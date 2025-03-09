@@ -4,7 +4,7 @@ use crate::interactive;
 
 use super::{
     player::{MusicVolume, RainVolume},
-    UiReflectSet, UiSet,
+    ButtonReflectSet, ButtonSet,
 };
 
 #[derive(Component)]
@@ -29,8 +29,8 @@ impl Plugin for SliderImport {
         app.add_systems(
             Update,
             (
-                slider_update.in_set(UiSet),
-                slider_head_update.in_set(UiReflectSet),
+                slider_update.in_set(ButtonSet),
+                slider_head_update.in_set(ButtonReflectSet),
             ),
         );
     }
@@ -77,7 +77,7 @@ fn slider_head_update(
     res_rain_vol: Res<RainVolume>,
     mut q_slider_head: Query<(&SliderRes, &mut Node), With<SliderHead>>,
 ) {
-    if res_mus_vol.is_changed() || res_rain_vol.is_changed() {
+    if res_mus_vol.is_changed() | res_rain_vol.is_changed() {
         for (slider_res, mut node) in &mut q_slider_head {
             match slider_res {
                 SliderRes::MusVol => node.left = Val::Px(res_mus_vol.0 * 56.0),

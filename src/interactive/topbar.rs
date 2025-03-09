@@ -1,6 +1,6 @@
 use bevy::{picking::focus::PickingInteraction, prelude::*};
 
-use super::{player::MusicPlaying, UiSet};
+use super::{player::MusicPlaying, ButtonSet};
 
 
 #[derive(Component)]
@@ -14,7 +14,7 @@ pub struct CloseButton;
 pub struct TopbarImport;
 impl Plugin for TopbarImport {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, topbar_buttons.in_set(UiSet));
+        app.add_systems(Update, topbar_buttons.in_set(ButtonSet));
 }}
 fn topbar_buttons(
     // player button

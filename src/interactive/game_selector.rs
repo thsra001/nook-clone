@@ -8,6 +8,8 @@ use rand::prelude::*;
 
 use crate::colours;
 
+use super::i18evy::I18Key;
+
 #[derive(Resource, Default, Reflect, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum GameSelector {
@@ -128,13 +130,34 @@ impl GameSelector {
             GameSelector::pocket_camp,
         ]
     }
-    // todo: fix this bs band aid fix
     pub fn random_game() ->GameSelector {
         let mut rng = rand::rng();
-        let choice = GameSelector::games().choose(&mut rng).unwrap().clone();
-        match choice {
-            GameSelector::population_growing_rainy => GameSelector::random_game(),
-            _ => choice
+        GameSelector::games().choose(&mut rng).unwrap().clone()
+    }
+    pub fn to_i18evy_key(&self) ->I18Key{
+        match &self  {
+             GameSelector::population_growing => I18Key::AcPopulationGrowingGc,
+            GameSelector::population_growing_snowy => {
+                I18Key::AcPopulationGrowingGcSnowy
+            }
+            GameSelector::population_growing_cherry => {
+                I18Key::AcPopulationGrowingGcSakura
+            }
+            GameSelector::population_growing_rainy => {
+                I18Key::AcPopulationGrowingGcRainyDay
+            }
+            GameSelector::wild_world => I18Key::AcCityFolkWii,
+            GameSelector::wild_world_rainy => I18Key::AcCityFolkWiiRainy,
+            GameSelector::wild_world_snowy => I18Key::AcCityFolkWiiSnowy,
+            GameSelector::new_leaf => I18Key::AcNewLeaf3ds,
+            GameSelector::new_leaf_rainy => I18Key::AcNewLeaf3dsRainy,
+            GameSelector::new_leaf_snowy => I18Key::AcNewLeaf3dsSnowy,
+            GameSelector::new_horizons => I18Key::AcNewHorizonsSwitch,
+            GameSelector::new_horizons_rainy => I18Key::AcNewHorizonsSwitchRainy,
+            GameSelector::new_horizons_snowy => I18Key::AcNewHorizonsSwitchSnowy,
+            GameSelector::pocket_camp => I18Key::AcPocketCampMobile,
+            GameSelector::kk_slider => I18Key::KkSlider,
+            GameSelector::random => I18Key::Random,
         }
     }
 }
@@ -142,8 +165,6 @@ pub struct GameSelectorImport;
 impl Plugin for GameSelectorImport {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameSelector>()
-            .register_type::<GameSelector>()
-            .add_plugins(ResourceInspectorPlugin::<GameSelector>::new())
             .add_systems(Update, update)
             .add_systems(Update, (ui_update, game_menu));
     }
@@ -192,6 +213,7 @@ fn update(
                     for game in GameSelector::iterator() {
                         win.spawn((
                             Text::new(game.to_display_name()),
+                            GameSelector::to_i18evy_key(&game),
                             TextFont {
                                 font: asset_server.load("fonts/inter-lig.ttf"),
                                 font_size: 14.0,
@@ -222,12 +244,13 @@ fn update(
     }
 }
 fn ui_update(
-    mut q_selector_text: Query<&mut Text, With<GameSelectorText>>,
+    mut q_selector_text: Query<(&mut Text,&mut I18Key), With<GameSelectorText>>,
     res_game: Res<GameSelector>,
 ) {
     if res_game.is_changed() {
-        if let Ok(mut tex) = q_selector_text.get_single_mut() {
-            **tex = (*res_game).to_display_name()
+        if let Ok((mut tex,mut i18)) = q_selector_text.get_single_mut() {
+            **tex = (*res_game).to_display_name();
+            *i18 = GameSelector::to_i18evy_key(&res_game);
         }
     }
 }

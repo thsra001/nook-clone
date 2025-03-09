@@ -1,9 +1,12 @@
 use crate::{
     colours::{self, SELECTOR_PURBLE2},
-    music::{GrandfatherMode, SaturdayKkMode},
+    music::{GrandfatherMode, OfflineMode, SaturdayKkMode, TownTune},
     rain::{self, RainType},
 };
 use bevy::{picking::focus::PickingInteraction, prelude::*};
+
+#[derive(Resource, Default, PartialEq)]
+pub struct StartupMode(pub bool);
 
 #[derive(Component, Debug)]
 #[require(Node(||{Node{width:Val::Px(14.0),height:Val::Px(14.0), ..default()}}))]
@@ -22,7 +25,7 @@ pub struct TickTick;
 pub struct TickboxImport;
 impl Plugin for TickboxImport {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.init_resource::<StartupMode>().add_systems(
             Update,
             (
                 hydrate_tickbox,
@@ -45,6 +48,9 @@ fn react_tickbox(
     mut res_rain: ResMut<RainType>,
     mut res_grandfather: ResMut<GrandfatherMode>,
     mut res_kk: ResMut<SaturdayKkMode>,
+    mut res_town: ResMut<TownTune>,
+    mut res_offline: ResMut<OfflineMode>,
+    mut res_startup: ResMut<StartupMode>,
 ) {
     // for every tickbox, toggle res if pressed
     for (tick, pick) in &q_tick {
@@ -60,6 +66,9 @@ fn react_tickbox(
                 }
                 Tickbox::Grandfather => res_grandfather.0 = !res_grandfather.0,
                 Tickbox::PlayKk => res_kk.0 = !res_kk.0,
+                Tickbox::TownTune => res_town.0 = !res_town.0,
+                Tickbox::DontDownload => res_offline.0 = !res_offline.0,
+                Tickbox::Startup => res_startup.0 = !res_startup.0,
                 _ => todo!(),
             };
         }
@@ -70,15 +79,28 @@ fn draw_tickbox(
     res_rain: Res<RainType>,
     res_grandfather: ResMut<GrandfatherMode>,
     res_kk: ResMut<SaturdayKkMode>,
+    res_town: ResMut<TownTune>,
+    res_offline: ResMut<OfflineMode>,
+    res_startup: ResMut<StartupMode>,
 ) {
-    if !res_rain.is_changed() & !res_grandfather.is_changed() & res_kk.is_changed() {
+    if res_rain.is_changed()
+        | res_grandfather.is_changed()
+        | res_kk.is_changed()
+        | res_town.is_changed()
+        | res_offline.is_changed()
+        | res_startup.is_changed()
+    {
         return;
     }
+
     for (tick, mut bgcol) in &mut q_tick {
         let state = match tick {
             Tickbox::Rain => *res_rain == RainType::game_rain,
             Tickbox::Grandfather => res_grandfather.0,
             Tickbox::PlayKk => res_kk.0,
+            Tickbox::TownTune => res_town.0,
+            Tickbox::DontDownload => res_offline.0,
+            Tickbox::Startup => res_startup.0,
             _ => todo!(),
         };
         if state {

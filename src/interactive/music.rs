@@ -9,6 +9,7 @@ use bevy::{
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_tokio_tasks::TokioTasksRuntime;
 use chrono::{Local, Timelike};
+use reqwest::header::CONTENT_TYPE;
 
 use crate::interactive::player::IsMusic;
 
@@ -20,6 +21,10 @@ use super::{
 pub struct GrandfatherMode(pub bool);
 #[derive(Resource,Default,Reflect)]
 pub struct SaturdayKkMode(pub bool);
+#[derive(Resource,Default,Reflect)]
+pub struct OfflineMode(pub bool);
+#[derive(Resource,Default,Reflect)]
+pub struct TownTune(pub bool);
 
 fn hour_to_pocket_camp(hour: String) -> String {
     // const MORNING:[&str] = ["5am", "6am", "7am", "8am"];
@@ -27,7 +32,7 @@ fn hour_to_pocket_camp(hour: String) -> String {
     // const EVENING:[&str] = ["5pm", "6pm"];
     // const NIGHT:[&str] = ["7pm", "8pm", "9pm", "10pm", "11pm", "12am", "1am", "2am", "3am", "4am"];
 
-    match hour.as_str() {
+    match hour.as_str() { 
         "5am" | "6am" | "7am" | "8am" => String::from("morning"),
         "9am" | "10am" | "11am" | "12pm" | "1pm" | "2pm" | "3pm" | "4pm" => String::from("day"),
         "5pm" | "6pm" => String::from("evening"),
@@ -53,10 +58,8 @@ impl Plugin for MusicImport {
         app.add_event::<LoadMusic>()
            .init_resource::<GrandfatherMode>()
            .init_resource::<SaturdayKkMode>()
-           .register_type::<GrandfatherMode>()
-           .register_type::<SaturdayKkMode>()
-           .add_plugins(ResourceInspectorPlugin::<GrandfatherMode>::default())
-           .add_plugins(ResourceInspectorPlugin::<SaturdayKkMode>::default())
+           .init_resource::<TownTune>()
+           .init_resource::<OfflineMode>()
             .add_systems(Update, (player, load_music.after(player)));
     }
 }
@@ -94,24 +97,29 @@ fn player(
         (debounce.2) = game.clone();
     };
     (*debounce).1 = thime.hour();
-    info!("passed:check 2");
+    info!("passed:check 2 at {}",thime);
 
     // passed
-
     let (apm, hour) = thime.hour12();
-    let apm_str = if apm { "pm" } else { "am" };
-
+    let mut apm_str = if apm { "pm" } else { "am" };
     // game manager
     let gametype = match *game {
         GameSelector::random => GameSelector::random_game().to_file_name().to_string(),
         _ => (*game.to_file_name()).to_string(),
     };
     // pocket camp manager
-    let time_str = if *game==GameSelector::random && gametype == "pocket-camp" || *game == GameSelector::pocket_camp  {
-      hour_to_pocket_camp(format!("{hour}{apm_str}"))
-    } else {
-        format!("{hour}{apm_str}")
+    let time_str = match gametype.as_str() {
+        "population-growing-rainy" => "12am".to_string(),
+        "pocket-camp" => hour_to_pocket_camp(format!("{hour}{apm_str}")),
+        _ => format!("{hour}{apm_str}")
     };
+    // let time_str = if *game==GameSelector::random && gametype == "pocket-camp" || *game == GameSelector::pocket_camp  {
+    //   hour_to_pocket_camp(format!("{hour}{apm_str}"))
+    // } else if *game==Ga {} 
+    // else {
+    //     format!("{hour}{apm_str}")
+    // };
+
     // let time_str = match gametype.as_str() {
     //     "pocket-camp" => hour_to_pocket_camp(format!("{hour}{apm_str}")),
     //     _ => {
@@ -162,13 +170,20 @@ fn load_music(runtime: ResMut<TokioTasksRuntime>, mut env_load_mus: EventReader<
                 format!("https://d17orwheorv96d.cloudfront.net/{gametype}/{time_str}.ogg");
             let response = reqwest::get(target1).await.expect("oh noes file not found");
 
+            if let Some(content_type) = response.headers().get(CONTENT_TYPE) {
+                info!("{:?}",content_type);
+                if content_type != "audio/ogg" {
+                    panic!("Received a non ogg file(probs an xml dangit)!");
+                }
+            }
+
             let mut dest = {
                 let fname = response
                     .url()
                     .path_segments()
                     .and_then(|segments| segments.last())
                     .and_then(|name| if name.is_empty() { None } else { Some(name) })
-                    .unwrap_or("tmp.bin");
+                    .expect("uh invalid url");
 
                 info!("file to download: '{}'", fname);
                 let fname = path.join(fname);
