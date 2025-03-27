@@ -38,10 +38,11 @@ bevy = {version="0.15.2",default-features = false, features=[
   "sysinfo_plugin",
   "tonemapping_luts",
   "vorbis",
+ # "symphonia-vorbis",
   "serialize",
 #   "webgl2",
   "x11",]} 
-bevy-inspector-egui = "0.29.1"
+bevy-inspector-egui = "0.30.0"
 image = "0.25.5"
 tray-icon = "0.20.0"
 
@@ -52,6 +53,7 @@ chrono = "0.4.39"
 bevy-tokio-tasks = "0.15.0"
 reqwest = "0.12.12"
 rand = "0.9.0"
+rsmpeg = { version = "0.15.1", default-features = false, features = ["ffmpeg7","link_system_ffmpeg"] }
 # bevy-persistent = { version = "0.7.0", features = ["all"] }
 # serde = {version ="1.0", features =["derive"]}
 # serde_ini = { version = "0.2", optional = true }

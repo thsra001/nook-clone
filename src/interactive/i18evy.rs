@@ -121,9 +121,9 @@ fn lang_update(lang: Res<I18evyLang>, mut q_tex: Query<(&mut Text, &I18Key)>) {
     if lang.is_changed() {
         info!("lang changed");
         for (mut tex, key) in &mut q_tex {
-            info!("text found:{}", tex.0);
+            //info!("text found:{}", tex.0);
             let res = find(key, &*lang);
-            info!("found key, transalating to:{}", &res);
+            //info!("found key, transalating to:{}", &res);
             tex.0 = res;
         }
     }
@@ -134,9 +134,9 @@ fn text_follow_lang(
     mut q_tex: Query<(&mut Text, &I18Key), Changed<I18Key>>,
 ) {
     for (mut tex, key) in &mut q_tex {
-        info!("text found:{}", tex.0);
+        //info!("text found:{}", tex.0);
         let res = find(key, &*lang);
-        info!("found key, transalating to:{}", &res);
+       // info!("found key, transalating to:{}", &res);
         tex.0 = res;
     }
 }

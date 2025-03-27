@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use super::{CurrentSite, SiteRoot};
 use crate::i18evy::I18Key;
 use crate::widgets::buttons::{KkButton, TownButton, WideButton};
+use crate::widgets::drop_down::{DropDown, DropDownRes};
 use crate::widgets::textStyle::{h1, h2, h3};
 use crate::widgets::tickbox::Tickbox;
 use crate::{colours, SiteHolder};
@@ -74,7 +75,7 @@ fn load_settings(
                             wide.spawn((
                                 Name::new("RainText"),
                                 Text::new("Use game rain/no-rain sound"),
-                                // todo: i18key is inaccurate
+                                // todo: i18key is inaccurate, should be /
                                 I18Key::UseGameRainSound,
                                 h2(&asset_server),
                             ));
@@ -158,7 +159,7 @@ fn load_settings(
                 });
             // language big text
             settings_site.spawn((Text::new("language"),I18Key::Language, h1(&asset_server)));
-
+            settings_site.spawn((DropDown,DropDownRes::Lang));
             // | language chooser dropdown |
 
             // offline big text

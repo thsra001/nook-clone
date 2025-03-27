@@ -20,7 +20,7 @@ fn load_customKK(mut commands:Commands,q_holder:Single<Entity,With<SiteHolder>>,
   }
   let site = commands.spawn((SiteRoot)).with_children(
     |site|{
-      site.spawn((DropDown,DropDownRes::Lang));
+   //   site.spawn((DropDown,DropDownRes::Lang));
     }
   ).id();
   commands.entity(*q_holder).add_child(site);

@@ -1,6 +1,6 @@
 use bevy::{picking::focus::PickingInteraction, prelude::*};
 
-use crate::{colours, sites::CurrentSite};
+use crate::{colours, interactive::{ButtonReflectSet, ButtonSet}, sites::CurrentSite};
 
 // wide buttons w:22 h:132
 #[derive(Component)]
@@ -13,11 +13,9 @@ pub struct ButtonImport;
 
 impl Plugin for ButtonImport {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (setting_button, reflect_setting_button.after(setting_button)),
-        )
-        .add_systems(Update, (custom_kk_button, custom_town_button));
+        app
+        .add_systems(Update,(setting_button,custom_kk_button,custom_town_button).in_set(ButtonSet))
+        .add_systems(Update, (reflect_setting_button).in_set(ButtonReflectSet));
     }
 }
 

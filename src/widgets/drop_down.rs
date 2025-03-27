@@ -21,6 +21,12 @@ pub enum DropDownRes {
     Song,
     Lang,
 }
+// marker struct for big button
+// struct for button text
+#[derive(Component)]
+
+pub struct DropDownLabel;
+
 pub struct DropdownImport;
 
 impl Plugin for DropdownImport {
