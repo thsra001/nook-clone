@@ -112,7 +112,7 @@ impl GameSelector {
         ];
         DIRECTIONS.iter()
     }
-    pub fn games() -> &'static [GameSelector; 14]{
+    pub fn games() -> &'static [GameSelector; 15]{
         &[
             GameSelector::population_growing,
             GameSelector::population_growing_snowy,
@@ -127,6 +127,7 @@ impl GameSelector {
             GameSelector::new_horizons,
             GameSelector::new_horizons_rainy,
             GameSelector::new_horizons_snowy,
+            GameSelector::kk_slider,
             GameSelector::pocket_camp,
         ]
     }

@@ -4,7 +4,7 @@ use crate::interactive;
 
 use super::{
     player::{MusicVolume, RainVolume},
-    ButtonReflectSet, ButtonSet,
+    ButtonReflectSet, ButtonSet, LooseInputSet,
 };
 
 #[derive(Component)]
@@ -29,7 +29,7 @@ impl Plugin for SliderImport {
         app.add_systems(
             Update,
             (
-                slider_update.in_set(ButtonSet),
+                slider_update.in_set(LooseInputSet),
                 slider_head_update.in_set(ButtonReflectSet),
             ),
         );

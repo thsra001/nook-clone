@@ -1,7 +1,5 @@
 use crate::{
-    colours::{self, SELECTOR_PURBLE2},
-    music::{GrandfatherMode, OfflineMode, SaturdayKkMode, TownTune},
-    rain::{self, RainType},
+    colours::{self, SELECTOR_PURBLE2}, interactive::ButtonSet, music::{kkwhichsongs, GrandfatherMode, OfflineMode, SaturdayKkMode, TownTune}, rain::{self, RainType}
 };
 use bevy::{picking::focus::PickingInteraction, prelude::*};
 
@@ -18,6 +16,7 @@ pub enum Tickbox {
     TownTune,
     PlayKk,
     Startup,
+    Kksong(String)
 }
 #[derive(Component, Debug)]
 pub struct TickTick;
@@ -29,7 +28,7 @@ impl Plugin for TickboxImport {
             Update,
             (
                 hydrate_tickbox,
-                react_tickbox.after(hydrate_tickbox),
+                react_tickbox.after(hydrate_tickbox).in_set(ButtonSet),
                 draw_tickbox.after(react_tickbox),
             ),
         );
@@ -51,6 +50,7 @@ fn react_tickbox(
     mut res_town: ResMut<TownTune>,
     mut res_offline: ResMut<OfflineMode>,
     mut res_startup: ResMut<StartupMode>,
+    mut res_kksongs: ResMut<kkwhichsongs>
 ) {
     // for every tickbox, toggle res if pressed
     for (tick, pick) in &q_tick {
@@ -69,7 +69,7 @@ fn react_tickbox(
                 Tickbox::TownTune => res_town.0 = !res_town.0,
                 Tickbox::DontDownload => res_offline.0 = !res_offline.0,
                 Tickbox::Startup => res_startup.0 = !res_startup.0,
-                _ => todo!(),
+                Tickbox::Kksong(song) => if res_kksongs.0.contains(song) {res_kksongs.0.retain(|val| &val != &song);} else {res_kksongs.0.push(song.to_string());},
             };
         }
     }
@@ -82,6 +82,7 @@ fn draw_tickbox(
     res_town: ResMut<TownTune>,
     res_offline: ResMut<OfflineMode>,
     res_startup: ResMut<StartupMode>,
+    res_kksongs: Res<kkwhichsongs>
 ) {
     if res_rain.is_changed()
         | res_grandfather.is_changed()
@@ -89,6 +90,7 @@ fn draw_tickbox(
         | res_town.is_changed()
         | res_offline.is_changed()
         | res_startup.is_changed()
+        | res_kksongs.is_changed()
     {
         return;
     }
@@ -101,7 +103,7 @@ fn draw_tickbox(
             Tickbox::TownTune => res_town.0,
             Tickbox::DontDownload => res_offline.0,
             Tickbox::Startup => res_startup.0,
-            _ => todo!(),
+            Tickbox::Kksong(song) => {res_kksongs.0.contains(song)}
         };
         if state {
             bgcol.0 = colours::SLIDER_BLUE

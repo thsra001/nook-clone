@@ -1,12 +1,12 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, ui::RelativeCursorPosition, window::WindowResolution, winit::{UpdateMode, WinitSettings}};
-use bevy_inspector_egui::{egui::Slider, quick::WorldInspectorPlugin};
-use bevy_tokio_tasks::TokioTasksRuntime;
-use tray_icon::{
-    menu::{self, AboutMetadata, Menu, MenuEvent, MenuItem, PredefinedMenuItem},
-    TrayIcon, TrayIconBuilder, TrayIconEvent, TrayIconEventReceiver,
+use bevy::{
+    input::common_conditions::input_toggle_active,
+    prelude::*,
+    window::{ExitCondition, WindowResolution},
+    winit::{UpdateMode, WakeUp, WinitPlugin, WinitSettings},
 };
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod colours;
 use colours::*;
 mod widgets;
@@ -18,7 +18,8 @@ use interactive::*;
 mod sites;
 use sites::*;
 use winit::event_loop::EventLoop;
-mod tray2 ;
+mod async_handler;
+mod tray2;
 use tray2::*;
 
 use crate::topbar::{CloseButton, MiniButton};
@@ -30,26 +31,29 @@ use crate::{
 #[derive(Component)]
 struct SiteHolder;
 
-enum UserEvent {
-    TrayIconEvent(tray_icon::TrayIconEvent),
-    MenuEvent(tray_icon::menu::MenuEvent),
-}
-
 fn main() {
+    let winit_plugin = WinitPlugin::<UserEvent>::default();
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin{
-            primary_window:Some(Window{
-                resolution:WindowResolution::new(400.0, 216.0),
-                ..default()
-            }),
-            ..default()
-        }))
-      //  .add_systems(PreStartup, load_persistant)
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        resolution: WindowResolution::new(400.0, 216.0),
+                        title: String::from("nook"),
+                        ..default()
+                    }),
+                    exit_condition:ExitCondition::DontExit,
+                    ..default()
+                })
+                .disable::<WinitPlugin<WakeUp>>()
+                .add(winit_plugin),
+        )
+        //  .add_systems(PreStartup, load_persistant)
         .add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default())
         .add_plugins(TrayImport)
-        .add_plugins((SitesImport,WidgetImport,InterImport))
-        .add_plugins(WorldInspectorPlugin::new())
-        .insert_resource( WinitSettings {
+        .add_plugins((SitesImport, WidgetImport, InterImport))
+        .add_plugins(WorldInspectorPlugin::new().run_if(input_toggle_active(true, KeyCode::KeyO)))
+        .insert_resource(WinitSettings {
             focused_mode: UpdateMode::reactive(Duration::from_secs(5)),
             unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs(15)),
         })
@@ -61,8 +65,6 @@ fn main() {
 // bar #090410
 // bg #17092c
 
-
-
 fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     info!("hello nook");
     commands.spawn(Camera2d);
@@ -73,7 +75,7 @@ fn build_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 height: Val::Percent(100.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                overflow:Overflow::scroll_y(),
+                overflow: Overflow::scroll_y(),
                 ..default()
             },
             BackgroundColor(colours::BACKGROUND_PURBLE),

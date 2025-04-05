@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{colours::{self, SELECTOR_PURBLE2}, game_selector::{GameSelector, GameSelectorText, GamesSelectorButton}, i18evy::I18Key, player::MusicVolume, slider::{Slider, SliderHead, SliderRes}, SiteHolder};
+use crate::{colours::{self, SELECTOR_PURBLE2}, game_selector::{GameSelector, GameSelectorText, GamesSelectorButton}, i18evy::{self, I18Key}, player::MusicVolume, slider::{Slider, SliderHead, SliderRes}, SiteHolder};
 use crate::interactive::player::RainVolume;
-use super::{CurrentSite, SiteRoot};
+use super::{CurrentSite, ProperHeight, SiteRoot};
+use crate::widgets::buttons::PatreonButton;
 
 pub struct StartImport;
 
@@ -22,6 +23,7 @@ fn load_start(
     q_other_site: Query<Entity, With<SiteRoot>>,
     res_mus_vol: ResMut<MusicVolume>,
     res_rain_vol: Res<RainVolume>,
+    res_game:Res<GameSelector>
 ) {
     for ent in &q_other_site {
         commands.entity(ent).despawn_recursive();
@@ -157,8 +159,8 @@ fn load_start(
             .with_children(|selector| {
                 // current choice
                 selector.spawn((
-                    Text::new(GameSelector::population_growing.to_display_name()),
-                    I18Key::AcPopulationGrowingGc,
+                    Text::new(res_game.to_display_name()),
+                    res_game.to_i18evy_key(),
                     TextFont {
                         font: asset_server.load("fonts/inter-lig.ttf"),
                         font_size: 14.0,
@@ -211,6 +213,8 @@ fn load_start(
                 lbollock.spawn((
                     Text::new("patreon"),
                     I18Key::Patreon,
+                    Button,
+                    PatreonButton,
                     TextFont {
                         font: asset_server.load("fonts/inter-reg.ttf"),
                         font_size: 10.0,

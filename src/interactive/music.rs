@@ -4,13 +4,14 @@ use std::fs::{self, File};
 use std::str::FromStr;
 use std::{io::Write, path::Path};
 
+use bevy::input::common_conditions::input_toggle_active;
 use bevy::{
     audio::{PlaybackMode, Volume},
     prelude::*,
 };
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_tokio_tasks::TokioTasksRuntime;
-use chrono::{Local, Timelike};
+use chrono::{Datelike, Local, Timelike, Weekday};
 use rand::seq::IndexedRandom;
 use reqwest::header::CONTENT_TYPE;
 
@@ -20,13 +21,13 @@ use rsmpeg::error::RsmpegError;
 use rsmpeg::{
     avcodec::AVPacket,
     avformat::{AVFormatContextInput, AVFormatContextOutput},
-    avutil::{ts2str, ts2timestr},
     ffi::AVRational,
 };
 use std::ffi::{CStr, CString};
-// 
+//
 
 use crate::interactive::player::IsMusic;
+use crate::tray2::UserEvent;
 
 use super::{
     game_selector::GameSelector,
@@ -66,20 +67,7 @@ fn hour_to_pocket_camp(hour: String) -> String {
 // 0: game as string, 1: time as string
 struct LoadMusic(String, String);
 
-pub struct MusicImport;
-
-impl Plugin for MusicImport {
-    fn build(&self, app: &mut App) {
-        app.add_event::<LoadMusic>()
-            .init_resource::<GrandfatherMode>()
-            .init_resource::<SaturdayKkMode>()
-            .init_resource::<TownTune>()
-            .init_resource::<OfflineMode>()
-            .add_systems(Update, (player, load_music.after(player)));
-    }
-}
-
-const kkSongs: [&str; 193] = [
+pub const kkSongs: [&str; 193] = [
     "Agent K.K.",
     "Aloha K.K.",
     "Animal City",
@@ -274,6 +262,28 @@ const kkSongs: [&str; 193] = [
     "Wandering (Radio)",
     "Welcome Horizons (Radio)",
 ];
+#[derive(Resource, Reflect)]
+pub struct kkwhichsongs(pub Vec<String>);
+impl Default for kkwhichsongs {
+    fn default() -> Self {
+        kkwhichsongs(kkSongs.iter().map(|song| song.to_string()).collect())
+    }
+}
+pub struct MusicImport;
+
+impl Plugin for MusicImport {
+    fn build(&self, app: &mut App) {
+        app.add_event::<LoadMusic>()
+            .init_resource::<GrandfatherMode>()
+            .init_resource::<kkwhichsongs>()
+            .register_type::<kkwhichsongs>()
+            .add_plugins(ResourceInspectorPlugin::<kkwhichsongs>::default().run_if(input_toggle_active(true, KeyCode::KeyO)))
+            .init_resource::<SaturdayKkMode>()
+            .init_resource::<TownTune>()
+            .init_resource::<OfflineMode>()
+            .add_systems(Update, (player, load_music.after(player)));
+    }
+}
 
 fn player(
     mut commands: Commands,
@@ -282,43 +292,52 @@ fn player(
     res_music_vol: Res<MusicVolume>,
     res_playing: Res<MusicPlaying>,
     res_grandfather: Res<GrandfatherMode>,
+    res_whichkk: Res<kkwhichsongs>,
+    res_kk: Res<SaturdayKkMode>,
     mut env_load_mus: EventWriter<LoadMusic>,
     other_music: Query<Entity, With<IsMusic>>,
     // 0:minute 1:hour 2: game 3:bool to configure numbers at start
-    mut debounce: bevy::prelude::Local<(u32, u32, GameSelector, bool)>,
+    mut debounce: bevy::prelude::Local<(u32, u32, bool)>,
 ) {
-    if !(*debounce).3 {
-        (*debounce).3 = true;
+    if !(*debounce).2 {
+        (*debounce).2 = true;
         (*debounce).0 = u32::MAX;
         (*debounce).1 = u32::MAX;
     }
     let thime = Local::now();
     // checks
     if (*debounce).0 == thime.minute() {
-        if (*debounce).2 == *game {
-            debug!("failed:check 1");
+        if !game.is_changed() {
+            debug!("failed:check 1 at {}", thime.minute());
             return;
         };
     };
-    debug!("passed:check 1");
     (*debounce).0 = thime.minute();
+    debug!("passed:check 1 at {}", thime.minute());
+
     if (*debounce).1 == thime.hour() {
-        if (*debounce).2 == *game {
+        if !game.is_changed() {
+            debug!("failed:check 2 at {}", thime);
             return;
         }
-        (debounce.2) = game.clone();
     };
     (*debounce).1 = thime.hour();
     info!("passed:check 2 at {}", thime);
 
     // passed
     let (apm, hour) = thime.hour12();
-    let mut apm_str = if apm { "pm" } else { "am" };
+    let apm_str = if apm { "pm" } else { "am" };
     // game manager
-    let gametype = match *game {
+    let mut gametype = match *game {
         GameSelector::random => GameSelector::random_game().to_file_name().to_string(),
         _ => (*game.to_file_name()).to_string(),
     };
+    // saturday kk night
+    if res_kk.0 {
+        if thime.weekday() == Weekday::Sat && /*day saturday and */ hour_to_pocket_camp(format!("{hour}{apm_str}")) == "night" {
+             gametype = GameSelector::kk_slider.to_file_name()
+        }
+    }
     // pocket camp manager
     let time_str = match gametype.as_str() {
         "population-growing-rainy" => "12am".to_string(),
@@ -326,8 +345,11 @@ fn player(
         "kk-slider-desktop" => {
             let mut rng = rand::rng();
             // sanitise strings with %20, file names with spaces are kinda stupidd
-            kkSongs.choose(&mut rng).unwrap().replace(" ", "%20")
-            //"K.K. Aria".to_string().replace(" ", "%20")
+            if let Some(choice) = res_whichkk.0.choose(&mut rng) {
+                choice.replace(" ", "%20")
+            } else {
+                kkSongs.choose(&mut rng).expect("the list is const").replace(" ", "%20")
+            }
         }
         _ => format!("{hour}{apm_str}"),
     };
@@ -394,7 +416,11 @@ fn load_music(runtime: ResMut<TokioTasksRuntime>, mut env_load_mus: EventReader<
             if gametype == "kk-slider-desktop" {
                 let path_str2 = format!("{path_str}/{time_str}.ogg");
                 info!(path_str2);
-                remux(&CString::from_str(target1.as_str()).unwrap(), &CString::from_str(path_str2.as_str()).unwrap()).unwrap()
+                remux(
+                    &CString::from_str(target1.as_str()).unwrap(),
+                    &CString::from_str(path_str2.as_str()).unwrap(),
+                )
+                .unwrap()
             }
             // else, typical downloading
             else {
@@ -428,7 +454,6 @@ fn load_music(runtime: ResMut<TokioTasksRuntime>, mut env_load_mus: EventReader<
                 } else {
                     panic!("task: went to shit")
                 };
-                
             };
             ctx.run_on_main_thread(move |ctx| {
                 // The inner context gives access to a mutable Bevy World reference.
@@ -459,9 +484,11 @@ fn load_music(runtime: ResMut<TokioTasksRuntime>, mut env_load_mus: EventReader<
     }
 }
 
-fn remux(input_path: &CStr, output_path: &CStr) -> Result<(),RsmpegError> {
+fn remux(input_path: &CStr, output_path: &CStr) -> Result<(), RsmpegError> {
+
+
     let mut input_format_context = AVFormatContextInput::open(input_path, None, &mut None)
-    .expect("Create input format context failed.");
+        .expect("Create input format context failed.");
     input_format_context
         .dump(0, input_path)
         .expect("Dump input format context failed.");
@@ -474,7 +501,7 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<(),RsmpegError> {
             .into_iter()
             .map(|stream| {
                 let codec_type = stream.codecpar().codec_type();
-                if !codec_type.is_audio()  {
+                if !codec_type.is_audio() {
                     None
                 } else {
                     output_format_context
@@ -505,30 +532,42 @@ fn remux(input_path: &CStr, output_path: &CStr) -> Result<(),RsmpegError> {
         {
             let input_stream = &input_format_context.streams()[input_stream_index];
             let output_stream = &output_format_context.streams()[output_stream_index];
-            log_packet(input_stream.time_base, &packet, "in");
+       
             packet.rescale_ts(input_stream.time_base, output_stream.time_base);
             packet.set_stream_index(output_stream_index as i32);
             packet.set_pos(-1);
-            log_packet(output_stream.time_base, &packet, "out");
         }
         output_format_context
             .interleaved_write_frame(&mut packet)
             .expect("Interleaved write frame failed.");
     }
-    output_format_context
-        .write_trailer()
+    output_format_context.write_trailer()
 }
 
-fn log_packet(time_base: AVRational, pkt: &AVPacket, tag: &str) {
-    // println!(
-    //     "{}: pts:{} pts_time:{} dts:{} dts_time:{} duration:{} duration_time:{} stream_index:{}",
-    //     tag,
-    //     ts2str(pkt.pts),
-    //     ts2timestr(pkt.pts, time_base),
-    //     ts2str(pkt.dts),
-    //     ts2timestr(pkt.dts, time_base),
-    //     ts2str(pkt.duration),
-    //     ts2timestr(pkt.duration, time_base),
-    //     pkt.stream_index
-    // );
+fn play_music(us_ev:EventReader<UserEvent>){
+    // ctx.run_on_main_thread(move |ctx| {
+    //     // The inner context gives access to a mutable Bevy World reference.
+    //     let world: &mut World = ctx.world;
+    //     let asset_server = world.resource::<AssetServer>();
+    //     let res_music_vol = world.resource::<MusicVolume>();
+    //     let res_playing = world.resource::<MusicPlaying>();
+    //     let res_grandfather = world.resource::<GrandfatherMode>();
+
+    //     world.spawn((
+    //         IsMusic,
+    //         AudioPlayer::new(asset_server.load(format!("music/{gametype}/{time_str}.ogg"))),
+    //         PlaybackSettings {
+    //             mode: if res_grandfather.0 {
+    //                 PlaybackMode::Once
+    //             } else {
+    //                 PlaybackMode::Loop
+    //             },
+    //             volume: Volume::new(res_music_vol.0),
+    //             paused: !res_playing.0,
+    //             ..default()
+    //         },
+    //         Name::new("MusicPlayer"),
+    //     ));
+    // })
+    // .await;
 }

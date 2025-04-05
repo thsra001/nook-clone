@@ -14,18 +14,19 @@ use crate::colours;
         }}))]
 #[require(BackgroundColor(||{BackgroundColor(colours::SELECTOR_PURBLE)}))]
 #[require(Button)]
-pub struct  DropDown;
+pub struct  DropDown(pub DropDownRes);
 // what res does this dropdown manage
-#[derive(Component)]
 pub enum DropDownRes {
     Song,
     Lang,
 }
-// marker struct for big button
 // struct for button text
 #[derive(Component)]
-
 pub struct DropDownLabel;
+
+// comp on every choice in dropdownwindow
+#[derive(Component)]
+pub struct DropDownChoice(DropDownRes);
 
 pub struct DropdownImport;
 

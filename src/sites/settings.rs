@@ -159,7 +159,7 @@ fn load_settings(
                 });
             // language big text
             settings_site.spawn((Text::new("language"),I18Key::Language, h1(&asset_server)));
-            settings_site.spawn((DropDown,DropDownRes::Lang));
+            settings_site.spawn((DropDown(DropDownRes::Lang)));
             // | language chooser dropdown |
 
             // offline big text

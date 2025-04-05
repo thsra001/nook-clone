@@ -1,7 +1,7 @@
 # nook desktop but linux and bevy, yuh
 nook desktop is nice, but tray icons don't work.
 solution make a #bevy clone with proppa linux support and stuff :P
-
+requries ffmpeg, since some fool saved the k.k. SONGS as VIDEO files :C
 
 ### credits
 i used the inter font and nerd font symbols

@@ -25,7 +25,9 @@ fn topbar_buttons(
     mut window: Query<&mut Window>,
     // close button
     q_close: Query<&PickingInteraction,With<CloseButton>>,
-    mut exit: EventWriter<AppExit>
+    mut exit: EventWriter<AppExit>,
+    mut commands:Commands,
+    mut windows:Query<Entity,With<Window>>
 ){
     if let Ok(player) = q_player.get_single(){
         if *player == PickingInteraction::Pressed{
@@ -37,8 +39,10 @@ fn topbar_buttons(
         if *mini == PickingInteraction::Pressed{
         //   window.set_minimized(true);
         //   window.visible=false;
-          info!("minimised")
-          //todo!("TODO: remember to add tray icon");
+          info!("minimised");
+          for wind in &windows{
+            commands.entity(wind).despawn_recursive();
+          }
         }
     }
     if let Ok(close) = q_close.get_single(){

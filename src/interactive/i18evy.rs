@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{input::common_conditions::input_toggle_active, prelude::*};
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::{ButtonReflectSet, ButtonSet};
@@ -98,7 +98,7 @@ impl Plugin for I18evyImport {
         app.add_systems(Update, (lang_update, text_follow_lang.after(ButtonReflectSet)))
             .init_resource::<I18evyLang>()
             .register_type::<I18evyLang>()
-            .add_plugins(ResourceInspectorPlugin::<I18evyLang>::new());
+            .add_plugins(ResourceInspectorPlugin::<I18evyLang>::new().run_if(input_toggle_active(true, KeyCode::KeyO)));
     }
 }
 
